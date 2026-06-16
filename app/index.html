@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>广义相对论课程知识图谱</title>
+    <link rel="stylesheet" href="style.css">
+  </head>
+  <body>
+    <main class="app-shell">
+      <section class="graph-panel" aria-label="知识图谱">
+        <header class="topbar">
+          <h1>广义相对论课程知识图谱</h1>
+          <div class="search-box">
+            <label for="searchInput">搜索</label>
+            <input id="searchInput" type="search" placeholder="输入中文名、英文名或 id">
+          </div>
+        </header>
+        <div id="network" class="network"></div>
+        <div id="status" class="status">正在读取 graph.json...</div>
+      </section>
+      <aside class="detail-panel" aria-label="知识点详情">
+        <div class="detail-heading">
+          <p class="eyebrow">当前知识点</p>
+          <h2 id="detailTitle">请选择一个节点</h2>
+          <p id="detailSubtitle">点击图中的知识点查看学习目标和 AI 学习任务。</p>
+        </div>
+        <dl id="detailList" class="detail-list"></dl>
+      </aside>
+    </main>
+    <script src="app.js?v=5"></script>
+  </body>
+</html>
