@@ -13,6 +13,7 @@ ROOT = Path(__file__).resolve().parents[1]
 CONCEPTS_PATH = ROOT / "data" / "concepts.yaml"
 EDGES_PATH = ROOT / "data" / "edges.yaml"
 OUTPUT_PATH = ROOT / "app" / "graph.json"
+DATA_JS_PATH = ROOT / "app" / "graph-data.js"
 
 
 def load_yaml(path):
@@ -109,12 +110,19 @@ def build_graph():
         json.dumps(graph, ensure_ascii=False, indent=2),
         encoding="utf-8",
     )
+    DATA_JS_PATH.write_text(
+        "window.GR_COURSE_GRAPH = "
+        + json.dumps(graph, ensure_ascii=False, indent=2)
+        + ";\n",
+        encoding="utf-8",
+    )
     return graph
 
 
 def main():
     graph = build_graph()
     print(f"已生成 {OUTPUT_PATH.relative_to(ROOT)}")
+    print(f"已生成 {DATA_JS_PATH.relative_to(ROOT)}")
     print(f"节点数量: {len(graph['nodes'])}")
     print(f"边数量: {len(graph['edges'])}")
     return 0

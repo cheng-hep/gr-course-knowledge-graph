@@ -38,6 +38,10 @@ const searchInput = document.getElementById("searchInput");
 const detailTitle = document.getElementById("detailTitle");
 const detailSubtitle = document.getElementById("detailSubtitle");
 const detailList = document.getElementById("detailList");
+const qaInput = document.getElementById("qaInput");
+const askButton = document.getElementById("askButton");
+const qaAnswer = document.getElementById("qaAnswer");
+const qaExampleButtons = document.querySelectorAll(".qa-examples button");
 
 function colorForChapter(chapter) {
   const index = (Number(chapter) - 1) % chapterColors.length;
@@ -50,6 +54,15 @@ function formatList(items, fallback = "无") {
 
 function getConcept(id) {
   return state.graph.nodes.find((node) => node.id === id);
+}
+
+function renderImportanceStars(importance) {
+  const activeCount = Math.max(0, Math.min(5, Number(importance) || 0));
+  const stars = Array.from({ length: 5 }, (_, index) => {
+    const className = index < activeCount ? "star is-active" : "star";
+    return `<span class="${className}" aria-hidden="true">★</span>`;
+  }).join("");
+  return `<span class="importance-stars" aria-label="重要性 ${activeCount} 星，共 5 星">${stars}</span>`;
 }
 
 function renderDetails(nodeId) {
@@ -68,7 +81,7 @@ function renderDetails(nodeId) {
   const rows = [
     ["英文名", node.name_en],
     ["所属章节", `第 ${node.chapter} 讲`],
-    ["重要性", `${node.importance} / 5`],
+    ["重要性", renderImportanceStars(node.importance)],
     ["前置知识", formatList(prereqNames)],
     ["学习目标", node.learning_objective],
     ["常见误区", node.common_misconception],
@@ -81,6 +94,162 @@ function renderDetails(nodeId) {
     .join("");
 
   renderGraph();
+}
+
+function normalizeText(value) {
+  return String(value || "").trim().toLowerCase();
+}
+
+function conceptSearchText(node) {
+  return [
+    node.id,
+    node.label,
+    node.name_en,
+    node.learning_objective,
+    node.common_misconception,
+    node.ai_learning_task,
+    ...(node.prerequisites || []),
+  ]
+    .map(normalizeText)
+    .join(" ");
+}
+
+function scoreConceptForQuestion(node, question) {
+  const q = normalizeText(question);
+  const text = conceptSearchText(node);
+  let score = 0;
+
+  if (!q) return score;
+  if (q.includes(normalizeText(node.label))) score += 80;
+  if (q.includes(normalizeText(node.name_en))) score += 70;
+  if (q.includes(normalizeText(node.id))) score += 70;
+
+  for (const token of q.split(/[\s,，。？?、:：;；]+/).filter(Boolean)) {
+    if (token.length >= 2 && text.includes(token)) score += token.length > 4 ? 12 : 8;
+  }
+
+  for (const char of node.label) {
+    if (q.includes(char)) score += 1;
+  }
+
+  if (q.includes("前置") || q.includes("先学") || q.includes("基础")) {
+    score += (node.prerequisites || []).length ? 6 : 0;
+  }
+  if (q.includes("误区") || q.includes("错误") || q.includes("混淆")) {
+    score += node.common_misconception ? 6 : 0;
+  }
+  if (q.includes("任务") || q.includes("练习") || q.includes("ai")) {
+    score += node.ai_learning_task ? 6 : 0;
+  }
+
+  return score;
+}
+
+function relatedEdgesForConcept(conceptId) {
+  return state.graph.edges.filter((edge) => edge.source === conceptId || edge.target === conceptId);
+}
+
+function formatConceptLink(id) {
+  const node = getConcept(id);
+  return node ? node.label : id;
+}
+
+function renderAnswerSection(title, body) {
+  return `<section class="qa-answer-section"><h3>${escapeHtml(title)}</h3>${body}</section>`;
+}
+
+function answerQuestion(question) {
+  const q = normalizeText(question);
+  if (!q) {
+    return {
+      conceptId: state.selectedId,
+      html: "<p>请先输入一个课程问题。可以问某个概念是什么、需要哪些前置知识、有什么常见误区，或它和哪些知识点有关。</p>",
+    };
+  }
+
+  const ranked = state.graph.nodes
+    .map((node) => ({ node, score: scoreConceptForQuestion(node, question) }))
+    .filter((item) => item.score > 0)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 4);
+
+  if (!ranked.length) {
+    return {
+      conceptId: state.selectedId,
+      html: "<p>我没有在知识图谱中找到明确匹配的知识点。可以换成讲义里的概念名，例如“度规”“测地线”“事件视界”再试。</p>",
+    };
+  }
+
+  const node = ranked[0].node;
+  const prereqNames = (node.prerequisites || []).map(formatConceptLink);
+  const edges = relatedEdgesForConcept(node.id).slice(0, 6);
+  const asksPrereq = q.includes("前置") || q.includes("先学") || q.includes("基础");
+  const asksMisconception = q.includes("误区") || q.includes("错误") || q.includes("混淆");
+  const asksTask = q.includes("任务") || q.includes("练习") || q.includes("ai");
+  const asksRelation = q.includes("关系") || q.includes("相关") || q.includes("联系");
+
+  const sections = [];
+  sections.push(
+    renderAnswerSection(
+      `你问的可能是：${node.label}`,
+      `<p>${escapeHtml(node.learning_objective)}</p>`,
+    ),
+  );
+
+  if (asksPrereq || !asksMisconception && !asksTask) {
+    sections.push(
+      renderAnswerSection(
+        "建议先补的前置知识",
+        `<p>${escapeHtml(formatList(prereqNames, "这个知识点在图谱中没有显式前置知识。"))}</p>`,
+      ),
+    );
+  }
+
+  if (asksMisconception || !asksPrereq && !asksTask) {
+    sections.push(
+      renderAnswerSection("常见误区", `<p>${escapeHtml(node.common_misconception)}</p>`),
+    );
+  }
+
+  if (asksTask || !asksPrereq && !asksMisconception) {
+    sections.push(
+      renderAnswerSection("AI 学习任务", `<p>${escapeHtml(node.ai_learning_task)}</p>`),
+    );
+  }
+
+  if (asksRelation || edges.length) {
+    const edgeItems = edges
+      .map((edge) => {
+        const otherId = edge.source === node.id ? edge.target : edge.source;
+        const relation = relationLabels[edge.relation] || edge.relation;
+        return `<li><strong>${escapeHtml(formatConceptLink(otherId))}</strong>：${escapeHtml(relation)}，${escapeHtml(edge.description)}</li>`;
+      })
+      .join("");
+    sections.push(
+      renderAnswerSection("图谱中的相关关系", edgeItems ? `<ul>${edgeItems}</ul>` : "<p>暂无直接关系边。</p>"),
+    );
+  }
+
+  const otherMatches = ranked
+    .slice(1)
+    .map((item) => item.node.label)
+    .join("、");
+  if (otherMatches) {
+    sections.push(`<p class="qa-related">也可能相关：${escapeHtml(otherMatches)}</p>`);
+  }
+
+  return {
+    conceptId: node.id,
+    html: sections.join(""),
+  };
+}
+
+function handleQuestionSubmit() {
+  const answer = answerQuestion(qaInput.value);
+  qaAnswer.innerHTML = answer.html;
+  if (answer.conceptId) {
+    renderDetails(answer.conceptId);
+  }
 }
 
 function matchesQuery(node) {
@@ -237,18 +406,39 @@ function applySearch(query) {
   }
 }
 
+async function loadGraph() {
+  if (window.GR_COURSE_GRAPH) {
+    return window.GR_COURSE_GRAPH;
+  }
+
+  const response = await fetch("graph.json", { cache: "no-store" });
+  if (!response.ok) throw new Error(`HTTP ${response.status}`);
+  return response.json();
+}
+
 async function init() {
   try {
-    const response = await fetch("graph.json", { cache: "no-store" });
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    state.graph = await response.json();
+    state.graph = await loadGraph();
 
     searchInput.addEventListener("input", (event) => applySearch(event.target.value));
+    askButton.addEventListener("click", handleQuestionSubmit);
+    qaInput.addEventListener("keydown", (event) => {
+      if ((event.metaKey || event.ctrlKey) && event.key === "Enter") {
+        handleQuestionSubmit();
+      }
+    });
+    qaExampleButtons.forEach((button) => {
+      button.addEventListener("click", () => {
+        qaInput.value = button.dataset.question;
+        handleQuestionSubmit();
+      });
+    });
     window.addEventListener("resize", renderGraph);
     renderDetails(state.graph.nodes[0].id);
     statusEl.textContent = `已加载 ${state.graph.nodes.length} 个知识点和 ${state.graph.edges.length} 条关系。`;
   } catch (error) {
-    statusEl.textContent = `读取 graph.json 失败：${error.message}`;
+    const fileHint = window.location.protocol === "file:" ? " 请确认 graph-data.js 和 index.html 在同一目录。" : "";
+    statusEl.textContent = `读取图谱数据失败：${error.message}${fileHint}`;
   }
 }
 

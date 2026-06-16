@@ -26,8 +26,27 @@
           <p id="detailSubtitle">点击图中的知识点查看学习目标和 AI 学习任务。</p>
         </div>
         <dl id="detailList" class="detail-list"></dl>
+        <section class="qa-panel" aria-label="课程问答">
+          <div class="qa-heading">
+            <p class="eyebrow">课程问答</p>
+            <h2>问知识图谱</h2>
+            <p>输入一个课程问题，系统会基于知识点、前置关系和常见误区生成回答。</p>
+          </div>
+          <div class="qa-examples" aria-label="快捷问题">
+            <button type="button" data-question="什么是事件视界？">事件视界是什么</button>
+            <button type="button" data-question="测地线的前置知识是什么？">测地线前置知识</button>
+            <button type="button" data-question="度规张量有什么常见误区？">度规常见误区</button>
+          </div>
+          <label class="qa-label" for="qaInput">你的问题</label>
+          <textarea id="qaInput" rows="4" placeholder="例如：我不懂测地线，需要先学什么？"></textarea>
+          <button id="askButton" class="qa-submit" type="button">生成回答</button>
+          <div id="qaAnswer" class="qa-answer" aria-live="polite">
+            可以问“是什么”“需要先学什么”“有什么常见误区”“和哪些知识点有关”。
+          </div>
+        </section>
       </aside>
     </main>
-    <script src="app.js?v=5"></script>
+    <script src="graph-data.js?v=1"></script>
+    <script src="app.js?v=7"></script>
   </body>
 </html>

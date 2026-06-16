@@ -32,10 +32,12 @@ class GraphScriptTests(unittest.TestCase):
 
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         graph_path = ROOT / "app" / "graph.json"
+        graph_data_path = ROOT / "app" / "graph-data.js"
         graph = json.loads(graph_path.read_text(encoding="utf-8"))
         self.assertGreaterEqual(len(graph["nodes"]), 25)
         self.assertGreaterEqual(len(graph["edges"]), 40)
         self.assertLessEqual({"id", "label", "learning_objective"}, set(graph["nodes"][0]))
+        self.assertIn("window.GR_COURSE_GRAPH", graph_data_path.read_text(encoding="utf-8"))
 
 
 if __name__ == "__main__":

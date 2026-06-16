@@ -238,6 +238,139 @@ h2 {
   min-width: 0;
 }
 
+.importance-stars {
+  display: inline-flex;
+  gap: 1px;
+  line-height: 1;
+}
+
+.star {
+  color: #cbd5e1;
+  font-size: 16px;
+}
+
+.star.is-active {
+  color: #facc15;
+  text-shadow: 0 0 0 1px rgba(161, 98, 7, 0.25);
+}
+
+.qa-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-top: 18px;
+  border-top: 1px solid var(--line);
+}
+
+.qa-heading h2 {
+  margin: 0;
+  font-size: 19px;
+}
+
+.qa-heading p:last-child {
+  margin: 7px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.qa-examples {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.qa-examples button,
+.qa-submit {
+  min-height: 34px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #ffffff;
+  color: var(--ink);
+  cursor: pointer;
+  font: inherit;
+}
+
+.qa-examples button {
+  padding: 0 10px;
+  font-size: 12px;
+}
+
+.qa-submit {
+  width: 100%;
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #ffffff;
+  font-weight: 700;
+}
+
+.qa-examples button:hover,
+.qa-submit:hover {
+  filter: brightness(0.96);
+}
+
+.qa-label {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+#qaInput {
+  width: 100%;
+  resize: vertical;
+  min-height: 92px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 10px 11px;
+  color: var(--ink);
+  background: #ffffff;
+  font: inherit;
+  line-height: 1.5;
+  outline: none;
+}
+
+#qaInput:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(36, 106, 115, 0.16);
+}
+
+.qa-answer {
+  padding: 12px;
+  border: 1px solid #dbe4ee;
+  border-radius: 6px;
+  background: #f8fafc;
+  color: var(--ink);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.qa-answer p {
+  margin: 0;
+}
+
+.qa-answer-section + .qa-answer-section {
+  margin-top: 12px;
+}
+
+.qa-answer-section h3 {
+  margin: 0 0 6px;
+  font-size: 14px;
+}
+
+.qa-answer ul {
+  margin: 0;
+  padding-left: 18px;
+}
+
+.qa-answer li + li {
+  margin-top: 5px;
+}
+
+.qa-related {
+  margin-top: 12px;
+  color: var(--muted);
+}
+
 @media (max-width: 860px) {
   .app-shell {
     grid-template-columns: 1fr;
